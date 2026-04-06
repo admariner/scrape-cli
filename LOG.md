@@ -1,5 +1,9 @@
 # LOG
 
+## 2026-04-06
+
+- Agent-friendly CLI: all errors now go to stderr; concise error on missing `-e`; `--help` extended with examples for all major use cases
+
 ## 2026-02-23
 
 - Add `-u`/`--user-agent` option; set default UA to avoid 403 on sites like Wikipedia

@@ -49,7 +49,7 @@ def convert_css_to_xpath(expression):
     try:
         return GenericTranslator().css_to_xpath(expression)
     except Exception as e:
-        print(f"Error converting CSS selector to XPath: {e}")
+        print(f"Error converting CSS selector to XPath: {e}", file=sys.stderr)
         sys.exit(1)
 
 def is_xpath(expression):
@@ -98,7 +98,18 @@ def main():
     # Command line argument parser definition
     parser = argparse.ArgumentParser(
         description='Extract HTML elements using an XPath query or CSS3 selector.',
-        epilog='Example: cat page.html | python scrape.py -e "//a/@href"'
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''\
+examples:
+  scrape -e "//h1" file.html                      XPath expression
+  scrape -e "h1.title" file.html                  CSS selector
+  scrape -e "//a" -a href file.html               extract attribute
+  scrape -t file.html                             extract all text
+  scrape -e "//h1" https://example.com            fetch from URL
+  cat file.html | scrape -e "//h1"                read from stdin
+  scrape -e "//h1" -x file.html                   check existence (exit 0/1)
+  scrape -be "//article" file.html                wrap output in <html><body>
+'''
     )
 
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
@@ -134,10 +145,13 @@ def main():
 
     # Check that at least one expression is provided by the user (unless using -t option)
     if not args.expression and not args.text:
-        parser.print_help()
-        sys.exit(
-            "Error: you must provide at least one XPath query or CSS3 selector using the -e option, or use -t to extract text."
+        print(
+            "Error: no expression specified. Use -e \"//selector\" or -t.\n"
+            "  scrape -e \"//h1\" file.html\n"
+            "  scrape -t file.html",
+            file=sys.stderr
         )
+        sys.exit(1)
 
     # Determine the source of the input: URL, file, or stdin
     if args.html:
@@ -150,29 +164,29 @@ def main():
                 response.raise_for_status()
                 inp = response.content
             except requests.RequestException as e:
-                print(f"Error downloading HTML: {e}")
+                print(f"Error downloading HTML: {e}", file=sys.stderr)
                 sys.exit(1)
         else:
             # If the input is a local file, try to open it
             try:
                 inp = open(args.html, 'rb').read()
             except FileNotFoundError:
-                print(f"Error: The file '{args.html}' was not found.")
+                print(f"Error: The file '{args.html}' was not found.", file=sys.stderr)
                 sys.exit(1)
     else:
         # If the input is from stdin
         try:
             inp = sys.stdin.buffer.read()
             if not inp:
-                print("Error: No input received from stdin")
+                print("Error: No input received from stdin", file=sys.stderr)
                 sys.exit(1)
         except Exception as e:
-            print(f"Error reading input: {e}")
+            print(f"Error reading input: {e}", file=sys.stderr)
             sys.exit(1)
 
     # Check for empty or invalid input
     if not inp:
-        print("Error: Input is empty or invalid")
+        print("Error: Input is empty or invalid", file=sys.stderr)
         sys.exit(1)
 
     # Convert CSS selectors to XPath if necessary
@@ -223,7 +237,7 @@ def main():
                 document = etree.fromstring(inp, html_parser)
     except (etree.XMLSyntaxError, UnicodeDecodeError) as e:
         # Print an error in case of syntax issues in the HTML
-        print(f"Error parsing HTML: {e}")
+        print(f"Error parsing HTML: {e}", file=sys.stderr)
         sys.exit(1)
 
     results = []

@@ -158,21 +158,21 @@ def test_empty_stdin_returns_error():
     result = run_scrape("-e", "//p", input_data="")
 
     assert result.returncode == 1
-    assert "Error: No input received from stdin" in result.stdout
+    assert "Error: No input received from stdin" in result.stderr
 
 
 def test_missing_file_returns_error():
     result = run_scrape("resources/this-file-does-not-exist.html", "-e", "//p")
 
     assert result.returncode == 1
-    assert "was not found" in result.stdout
+    assert "was not found" in result.stderr
 
 
 def test_missing_expression_without_text_returns_error():
     result = run_scrape(str(TEST_HTML))
 
     assert result.returncode == 1
-    assert "you must provide at least one XPath query or CSS3 selector" in result.stderr
+    assert "no expression specified" in result.stderr
 
 
 def test_incorrect_eb_order_exits_with_specific_message():
@@ -186,7 +186,7 @@ def test_invalid_css_selector_fails_conversion():
     result = run_scrape(str(TEST_HTML), "-e", "div[")
 
     assert result.returncode == 1
-    assert "Error converting CSS selector to XPath" in result.stdout
+    assert "Error converting CSS selector to XPath" in result.stderr
 
 
 def test_url_input_downloads_and_extracts_text():

@@ -1,3 +1,7 @@
+# 2026-04-06
+
+- [1.2.3] Agent-friendly CLI improvements: all error messages now go to stderr; `--help` extended with examples for all major use cases; missing `-e` error replaced with a concise actionable message.
+
 # 2026-02-23
 
 - [1.2.2] Added `-u`/`--user-agent` option for HTTP requests; set a default browser-like User-Agent to avoid 403 errors on sites like Wikipedia.

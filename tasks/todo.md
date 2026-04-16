@@ -7,21 +7,20 @@ La CLI è già non-interattiva e stateless. I miglioramenti utili per gli agenti
 | Principio | Stato attuale | Azione |
 |-----------|---------------|--------|
 | Non-interattiva | ✅ OK | — |
-| `--help` con esempi | ⚠️ Solo 1 esempio | Migliorare |
-| Errori su stderr | ⚠️ Alcuni su stdout | Correggere |
-| Messaggio errore mancante espressione | ⚠️ Stampa tutto `--help` | Rendere conciso |
+| `--help` con esempi | ✅ OK (v1.2.3) | — |
+| Errori su stderr | ✅ OK (v1.2.3) | — |
+| Messaggio errore conciso su espressione mancante | ✅ OK (v1.2.3) | — |
 | Stdin e pipeline | ✅ OK | — |
-| Fail fast con errori azionabili | ⚠️ Parziale | Migliorare messaggi |
+| Fail fast con errori azionabili | ✅ OK (v1.2.3) | — |
 | Idempotente | ✅ OK (read-only) | — |
 
-## Todo
+## Gap residui dopo v1.2.3
 
-- [x] **1. --help con esempi** — aggiungere epilog multi-riga con esempi per ogni caso d'uso principale (XPath, CSS, testo, attributi, URL, stdin, check-existence)
-- [x] **2. Errori su stderr** — spostare tutti i `print("Error: ...")` su `sys.stderr`; aggiornare i test che controllano `result.stdout` → `result.stderr`
-- [x] **3. Messaggio errore conciso su espressione mancante** — rimuovere `parser.print_help()` e sostituire con messaggio breve + esempio azionabile
-- [x] **4. Aggiornare LOG.md**
+- [x] **1. `-eb` detection** — `sys.exit("Error string")` su riga 119 è inconsistente: usa `print(..., file=sys.stderr); sys.exit(1)` come il resto del codice
+- [x] **2. `--check_existence` vs `--check-existence`** — l'help mostra `--check_existence` (underscore), non standard Unix. Unificato in `--check-existence` (kebab-case) come arg primario; rimosso il doppio alias
+- [x] **3. Aggiornare LOG.md**
 
-## Review
+## Review (v1.2.3 completato)
 
 - `scrape.py`: epilog con `RawDescriptionHelpFormatter` + 8 esempi; tutti gli errori su stderr; errore espressione mancante conciso con esempio
 - `tests/test_scrape.py`: 3 test aggiornati da `result.stdout` a `result.stderr`

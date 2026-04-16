@@ -116,7 +116,8 @@ examples:
 
     # Check for incorrect argument order (-eb instead of -be)
     if '-eb' in ' '.join(sys.argv):
-        sys.exit("Error: The correct order is -be (body first, then expression). Please use -be instead of -eb.")
+        print("Error: use -be not -eb.\n  scrape -be \"//article\" file.html", file=sys.stderr)
+        sys.exit(1)
     # Defines the HTML input argument (can be a file, URL or stdin)
     parser.add_argument('html', nargs='?', type=str, default='',
                         help="HTML input (file, URL or stdin, default: stdin)", metavar="HTML")
@@ -133,12 +134,11 @@ examples:
     parser.add_argument('-e', '--expression', default=[], action='append',
                         help="XPath query or CSS3 selector")
     # Option to verify the existence of elements matching the expression
-    parser.add_argument('-x', '--check_existence', action='store_true', default=False,
+    parser.add_argument('-x', '--check-existence', dest='check_existence', action='store_true', default=False,
                         help="Returns an exit value indicating existence")
     # Option to avoid initial HTML parsing, useful in specific cases like CData
     parser.add_argument('-r', '--rawinput', action='store_true', default=False,
                         help="Do not parse HTML before passing to etree (useful for CData)")
-    parser.add_argument('--check-existence', dest='check_existence', action='store_true')
     parser.add_argument('-u', '--user-agent', default=None,
                         help="Custom User-Agent string for HTTP requests")
     args = parser.parse_args()

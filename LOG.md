@@ -1,5 +1,10 @@
 # LOG
 
+## 2026-04-16
+
+- Uniformato stile errori: `-eb` detection ora usa `print(stderr)+sys.exit(1)` invece di `sys.exit(string)`
+- `--check-existence` ora è il flag primario (kebab-case); rimosso alias duplicato `--check_existence`
+
 ## 2026-04-06
 
 - Agent-friendly CLI: all errors now go to stderr; concise error on missing `-e`; `--help` extended with examples for all major use cases

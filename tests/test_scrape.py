@@ -179,7 +179,7 @@ def test_incorrect_eb_order_exits_with_specific_message():
     result = run_scrape("-eb")
 
     assert result.returncode == 1
-    assert "Please use -be instead of -eb." in result.stderr
+    assert "use -be not -eb" in result.stderr
 
 
 def test_invalid_css_selector_fails_conversion():

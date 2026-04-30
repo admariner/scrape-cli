@@ -4,154 +4,158 @@ This document outlines the steps needed to release a new version to PyPI.
 
 ## Pre-release Checklist
 
-1. **Update version number** in the following files:
+1. **Update version number** in:
 
    - `pyproject.toml`
    - `scrape_cli/__init__.py`
 
 2. **Update the CHANGELOG**:
 
-   - Add a new section for the upcoming version.
+   - Add a new section for the upcoming version, with the release date.
    - Document all significant changes.
-   - Include the release date.
 
-3. **Use the Virtual Environment**:
+3. **Update `LOG.md`** with a one-line entry for the release.
 
-   - Use the existing virtual environment in the project:
-     ```
-     source venv/bin/activate  # Linux/MacOS
-     ```
-   - Verify dependencies are installed properly (they should already be available in the venv):
-     ```
-     pip list | grep -E "(twine|build)"
-     ```
+4. **Run the test suite** with the working venv:
+
+   ```bash
+   source .venv/bin/activate
+   pytest tests/
+   ```
+
+   All tests must pass.
 
 ## Build Process
 
-1. **Activate the virtual environment**:
+1. **Activate the working virtual environment** (`.venv`, uv-managed):
 
    ```bash
-   source venv/bin/activate  # Linux/MacOS
+   source .venv/bin/activate
    ```
 
-   Note: The project includes a pre-configured virtual environment with all necessary dependencies (twine, build, etc.) already installed.
+2. **Make sure `build` and `twine` are installed** in the venv:
 
-2. **Clean previous builds**:
-
-   ```
-   rm -rf build/ dist/ *.egg-info
+   ```bash
+   uv pip install build twine
    ```
 
-3. **Build the distribution packages**:
+3. **Clean previous builds**:
 
+   ```bash
+   rm -rf build/ dist/ scrape_cli.egg-info
    ```
+
+4. **Build the distribution packages**:
+
+   ```bash
    python3 -m build
    ```
 
-4. **Verify the built distributions**:
+5. **Verify the built distributions**:
 
-   ```
+   ```bash
    twine check dist/*
    ```
 
-5. **Local Installation Test** (optional but recommended):
+6. **Local install smoke test** (optional, recommended).
+   Always install inside an active venv, otherwise PEP 668 may block the install:
 
-   - Install the built package locally to verify it:
-     ```
-     pip install dist/<package-name>.tar.gz
-     ```
+   ```bash
+   pip install --force-reinstall dist/scrape_cli-<version>-py3-none-any.whl
+   scrape --version
+   ```
 
 ## Final Release
 
-1. **Upload the distribution packages to PyPI**:
+1. **Commit all release-related changes** (`pyproject.toml`, `__init__.py`, `CHANGELOG.md`, `LOG.md`, code, docs):
 
-   ```
-   twine upload dist/*
-   ```
-
-2. **Verify Installation**:
-
-   ```
-   pip install <package-name>
+   ```bash
+   git add -A
+   git commit -m "v<version>: <short description>"
+   git push origin master
    ```
 
-## Post-release Checklist
+2. **Tag the release** (annotated tag, after the commit is pushed):
 
-1. **Tag the Release in Git**:
-
-   ```
+   ```bash
    git tag -a <version> -m "Release <version>"
    git push origin <version>
    ```
 
-2. **Manually create the GitHub release**:
-
-   - Go to the releases page on GitHub: https://github.com/aborruso/scrape-cli/releases
-   - Click "Draft a new release".
-   - Select the tag you just created (e.g. v1.1.9).
-   - Enter the title and release notes (you can copy from the CHANGELOG).
-   - Publish the release.
-
-3. **Update Documentation**:
-
-   - Update relevant parts of the documentation.
-   - Post announcements in channels such as Slack or mailing lists (if applicable).
-   - Update the version badge in the README if present (e.g. PyPI badge or version badge).
-   - If you update README.md, rebuild the package and re-upload to PyPI to sync the PyPI README:
-     1. Edit `README.md` as needed
-     2. Run:
-
-        ```bash
-        python3 -m build
-        twine upload dist/*
-        ```
-     This ensures the PyPI project page always matches the latest README in the repository.
-
-## Rollback Process (Optional)
-
-1. **Remove the release from PyPI** if issues are found:
-
+3. **Upload the distribution packages to PyPI**:
 
    ```bash
-   twine delete <package-name> <version>
+   twine upload dist/*
    ```
 
-2. **Revert the Git Tag**:
+   PyPI does not allow re-uploading the same version. If you need to fix
+   anything after this point, bump to the next patch version and start over.
 
+4. **Verify Installation**:
 
    ```bash
-   git tag -d <version>
-   git push origin :refs/tags/<version>
+   uv tool install --force scrape-cli
+   # or
+   pipx install --force scrape-cli
+   scrape --version
    ```
 
-## Automate the Release Process (Optional)
+## Post-release Checklist
 
-To save time and reduce the chance of manual errors, consider using a script like the one below for automation:
+1. **Manually create the GitHub release**:
+
+   - Open https://github.com/aborruso/scrape-cli/releases
+   - Click "Draft a new release"
+   - Select the tag you just pushed (e.g. `1.3.0`)
+   - Title: `v<version>` (or copy from CHANGELOG)
+   - Body: copy the matching CHANGELOG section
+   - Publish
+
+2. **Update README badges and docs** if needed.
+   If you change `README.md` after the PyPI upload, you cannot re-upload the
+   same version: bump the patch number, rebuild, and upload the new version.
+
+## Rollback
+
+PyPI does not support deletion of a published version (and `twine delete`
+does not exist). If a release is broken:
+
+1. Yank the version on PyPI via the web UI (this hides it from new
+   installs but keeps existing installs working).
+2. Bump the patch version, fix the issue, and release the next version.
+
+If you need to roll back the git tag locally:
+
+```bash
+git tag -d <version>
+git push origin :refs/tags/<version>
+```
+
+## Automation
+
+A simple end-to-end script (run from the project root, with `.venv`
+activated):
 
 ```bash
 #!/bin/bash
 set -e
 
-# Activate the virtual environment
-source venv/bin/activate
+VERSION="$1"
+[ -z "$VERSION" ] && { echo "usage: $0 <version>"; exit 1; }
 
-# Clean previous builds
-rm -rf build/ dist/ *.egg-info
-
-# Build the package
+source .venv/bin/activate
+rm -rf build/ dist/ scrape_cli.egg-info
 python3 -m build
-
-# Check the build
 twine check dist/*
 
-# Upload to PyPI
+git add -A
+git commit -m "v${VERSION}: release"
+git push origin master
+
+git tag -a "${VERSION}" -m "Release ${VERSION}"
+git push origin "${VERSION}"
+
 twine upload dist/*
 
-# Tag the release
-git tag -a $1 -m "Release $1"
-git push origin $1
-
-# Crea manualmente la release su GitHub dopo il push del tag.
+# Then create the GitHub release manually from the pushed tag.
 ```
-
-This script simplifies many of the steps and ensures that all commands run in sequence.

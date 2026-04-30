@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import threading
@@ -187,6 +188,51 @@ def test_invalid_css_selector_fails_conversion():
 
     assert result.returncode == 1
     assert "Error converting CSS selector to XPath" in result.stderr
+
+
+def test_json_flag_produces_valid_json_for_single_element():
+    result = run_scrape(str(TEST_HTML), "-je", "a.external-link")
+
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    a = payload["html"]["body"]["a"]
+    assert a["@href"] == "https://example.com"
+    assert a["@class"] == "external-link"
+    assert a["#text"] == "Example Link"
+
+
+def test_json_flag_produces_array_for_multiple_elements():
+    result = run_scrape(str(TEST_HTML), "-je", "table.data-table td")
+
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    tds = payload["html"]["body"]["td"]
+    assert isinstance(tds, list)
+    assert "Italy" in tds
+    assert "Rome" in tds
+
+
+def test_json_flag_works_without_b_flag():
+    only_j = run_scrape(str(TEST_HTML), "-j", "-e", "a.external-link")
+    with_bj = run_scrape(str(TEST_HTML), "-bj", "-e", "a.external-link")
+
+    assert only_j.returncode == 0
+    assert with_bj.returncode == 0
+    assert only_j.stdout == with_bj.stdout
+
+
+def test_json_flag_conflicts_with_text_check_existence_argument():
+    jt = run_scrape(str(TEST_HTML), "-j", "-t")
+    assert jt.returncode == 1
+    assert "mutually exclusive" in jt.stderr
+
+    jx = run_scrape(str(TEST_HTML), "-j", "-e", "//h1", "-x")
+    assert jx.returncode == 1
+    assert "mutually exclusive" in jx.stderr
+
+    ja = run_scrape(str(TEST_HTML), "-j", "-e", "//a", "-a", "href")
+    assert ja.returncode == 1
+    assert "cannot be combined" in ja.stderr
 
 
 def test_url_input_downloads_and_extracts_text():

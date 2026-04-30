@@ -13,8 +13,10 @@
 import os
 import sys
 import re
+import json
 import argparse
 import requests
+import xmltodict
 from lxml import etree
 from cssselect import GenericTranslator
 
@@ -109,14 +111,19 @@ examples:
   cat file.html | scrape -e "//h1"                read from stdin
   scrape -e "//h1" -x file.html                   check existence (exit 0/1)
   scrape -be "//article" file.html                wrap output in <html><body>
+  scrape -je "//article" file.html                output as JSON (built-in)
 '''
     )
 
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
 
-    # Check for incorrect argument order (-eb instead of -be)
-    if '-eb' in ' '.join(sys.argv):
+    # Check for incorrect argument order (-eb instead of -be, -ej instead of -je)
+    joined_argv = ' '.join(sys.argv)
+    if '-eb' in joined_argv:
         print("Error: use -be not -eb.\n  scrape -be \"//article\" file.html", file=sys.stderr)
+        sys.exit(1)
+    if '-ej' in joined_argv:
+        print("Error: use -je not -ej.\n  scrape -je \"//article\" file.html", file=sys.stderr)
         sys.exit(1)
     # Defines the HTML input argument (can be a file, URL or stdin)
     parser.add_argument('html', nargs='?', type=str, default='',
@@ -130,6 +137,9 @@ examples:
     # Option to extract only text content
     parser.add_argument('-t', '--text', action='store_true', default=False,
                         help="Extract only text content (useful for LLMs)")
+    # Option to output structured JSON (built-in, no external xq needed)
+    parser.add_argument('-j', '--json', action='store_true', default=False,
+                        help="Output result as structured JSON")
     # Allows to specify one or more XPath or CSS3 selector expressions
     parser.add_argument('-e', '--expression', default=[], action='append',
                         help="XPath query or CSS3 selector")
@@ -142,6 +152,17 @@ examples:
     parser.add_argument('-u', '--user-agent', default=None,
                         help="Custom User-Agent string for HTTP requests")
     args = parser.parse_args()
+
+    # JSON flag is mutually exclusive with -t, -x, -a
+    if args.json and args.text:
+        print("Error: --json and --text are mutually exclusive.", file=sys.stderr)
+        sys.exit(1)
+    if args.json and args.check_existence:
+        print("Error: --json and --check-existence are mutually exclusive.", file=sys.stderr)
+        sys.exit(1)
+    if args.json and args.argument:
+        print("Error: --json cannot be combined with -a/--argument.", file=sys.stderr)
+        sys.exit(1)
 
     # Check that at least one expression is provided by the user (unless using -t option)
     if not args.expression and not args.text:
@@ -281,7 +302,11 @@ examples:
         results = [final_text] if final_text else []
 
     # Output handling
-    if args.body and not args.text:
+    if args.json:
+        wrapped = "<!DOCTYPE html>\n<html>\n<body>\n" + "".join(r + "\n" for r in results) + "</body>\n</html>\n"
+        parsed = xmltodict.parse(wrapped)
+        sys.stdout.write(json.dumps(parsed, indent=2, ensure_ascii=False) + "\n")
+    elif args.body and not args.text:
         sys.stdout.write("<!DOCTYPE html>\n<html>\n<body>\n")
         for result in results:
             sys.stdout.write(result + "\n")

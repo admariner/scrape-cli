@@ -1,5 +1,10 @@
 # LOG
 
+## 2026-04-30
+
+- v1.3.0: native `-j`/`--json` output (built-in `xmltodict`, no external `xq` needed, no `-b` required)
+- `-j` mutually exclusive with `-t`, `-x`, `-a`; explicit `-ej` order check (use `-je`)
+
 ## 2026-04-16
 
 - Uniformato stile errori: `-eb` detection ora usa `print(stderr)+sys.exit(1)` invece di `sys.exit(string)`

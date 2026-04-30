@@ -216,13 +216,12 @@ scrape -te 'h1, h2, h3' resources/test.html
 
 The `-t` option automatically excludes text from `<script>` and `<style>` tags and cleans up whitespace for better readability.
 
-### JSON Output Integration
+### JSON Output
 
-You can integrate scrape-cli with [xq](https://github.com/kislyuk/yq) (part of yq) to convert HTML output to structured JSON:
+Use the `-j`/`--json` flag to get structured JSON natively, with no external tools:
 
 ```bash
-# Extract and convert to JSON (requires -b for complete HTML)
-scrape -be "a.external-link" resources/test.html | xq .
+scrape -je "a.external-link" resources/test.html
 ```
 
 Output:
@@ -244,7 +243,7 @@ Output:
 Table extraction example:
 
 ```bash
-scrape -be "table.data-table td" resources/test.html | xq .
+scrape -je "table.data-table td" resources/test.html
 ```
 
 Output:
@@ -254,19 +253,21 @@ Output:
   "html": {
     "body": {
       "td": [
-        "1",
-        "John Doe",
-        "john@example.com",
-        "2",
-        "Jane Smith",
-        "jane@example.com"
+        "Italy",
+        "Rome",
+        "59",
+        "France",
+        "Paris",
+        "68"
       ]
     }
   }
 }
 ```
 
-**Note**: The `-b` flag is mandatory to produce valid HTML with `<html>`, `<head>` and `<body>` tags.
+`-j` automatically wraps the result in `<html>/<body>` before conversion, so you don't need to pass `-b`. The output is the same you would get from `scrape -be ... | xq .` (the underlying converter is `xmltodict`, the same library used by `xq`).
+
+`-j` is mutually exclusive with `-t`, `-x` (`--check-existence`) and `-a` (`--argument`).
 
 Useful for JSON-based pipelines, APIs, databases, and processing with jq/DuckDB.
 
@@ -274,6 +275,7 @@ Some notes on the commands:
 
 - `-e` to set the query
 - `-b` to add `<html>`, `<head>` and `<body>` tags to the HTML output
+- `-j` to output structured JSON (built-in)
 - `-t` to extract only text content (useful for LLMs and text processing)
 
 

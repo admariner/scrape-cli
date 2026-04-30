@@ -1,3 +1,7 @@
+# 2026-04-30
+
+- [1.3.0] Added native `-j`/`--json` flag to output structured JSON without needing `-b` or piping through external `xq`. Internally uses `xmltodict` (the same converter `xq` uses), so the output is identical. `-j` is mutually exclusive with `-t`, `-x` (`--check-existence`), and `-a` (`--argument`).
+
 # 2026-04-16
 
 - [1.2.4] Uniformato stile errori: `-eb` usa ora `print(stderr)+sys.exit(1)`; `--check-existence` è ora il flag primario (kebab-case), rimosso alias duplicato `--check_existence`.
